@@ -1,0 +1,271 @@
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<meta
+    name="description"
+    content="A modern image gallery powered by Unsplash"
+>
+
+<title>CodeAlpha Image Gallery</title>
+
+<link
+    rel="stylesheet"
+    href="style.css"
+>
+
+
+<!-- =================================
+     HEADER
+================================== -->
+
+<header class="header">
+
+    <h1>Image Gallery</h1>
+
+    <p>
+        Explore beautiful images from around the world
+    </p>
+
+</header>
+
+
+<!-- =================================
+     MAIN CONTENT
+================================== -->
+
+<main>
+
+
+    <!-- =================================
+         SEARCH
+    ================================== -->
+
+    <div class="search-box">
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Search images..."
+            autocomplete="off"
+            aria-label="Search images"
+        >
+
+        <button
+            id="searchBtn"
+            type="button"
+        >
+            Search
+        </button>
+
+    </div>
+
+
+    <!-- =================================
+         CATEGORIES
+    ================================== -->
+
+    <div
+        class="filters"
+        aria-label="Image categories"
+    >
+
+        <button
+            class="filter-btn active"
+            data-query="nature"
+            type="button"
+        >
+            Nature
+        </button>
+
+        <button
+            class="filter-btn"
+            data-query="birds"
+            type="button"
+        >
+            Birds
+        </button>
+
+        <button
+            class="filter-btn"
+            data-query="animals"
+            type="button"
+        >
+            Animals
+        </button>
+
+        <button
+            class="filter-btn"
+            data-query="city"
+            type="button"
+        >
+            City
+        </button>
+
+        <button
+            class="filter-btn"
+            data-query="cars"
+            type="button"
+        >
+            Cars
+        </button>
+
+        <button
+            class="filter-btn"
+            data-query="flowers"
+            type="button"
+        >
+            Flowers
+        </button>
+
+        <button
+            class="filter-btn"
+            data-query="technology"
+            type="button"
+        >
+            Technology
+        </button>
+
+        <button
+            class="filter-btn"
+            data-query="food"
+            type="button"
+        >
+            Food
+        </button>
+
+        <button
+            class="filter-btn"
+            data-query="travel"
+            type="button"
+        >
+            Travel
+        </button>
+
+        <button
+            class="filter-btn"
+            data-query="architecture"
+            type="button"
+        >
+            Architecture
+        </button>
+
+    </div>
+
+
+    <!-- =================================
+         GALLERY
+    ================================== -->
+
+    <section
+        class="gallery"
+        id="gallery"
+        aria-live="polite"
+    >
+
+        <!-- JavaScript adds images here -->
+
+    </section>
+
+
+    <!-- =================================
+         LOADING
+    ================================== -->
+
+    <p
+        id="loading"
+        class="loading"
+    >
+        Loading...
+    </p>
+
+
+    <!-- =================================
+         ERROR
+    ================================== -->
+
+    <p
+        id="error"
+        class="error"
+        role="alert"
+    ></p>
+
+</main>
+
+
+<!-- =================================
+     LIGHTBOX
+================================== -->
+
+<div
+    class="lightbox"
+    id="lightbox"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Image viewer"
+>
+
+
+    <!-- CLOSE BUTTON -->
+
+    <button
+        class="close-btn"
+        id="closeBtn"
+        type="button"
+        aria-label="Close image viewer"
+    >
+        &times;
+    </button>
+
+
+    <!-- PREVIOUS BUTTON -->
+
+    <button
+        class="prev-btn"
+        id="prevBtn"
+        type="button"
+        aria-label="Previous image"
+    >
+        &#10094;
+    </button>
+
+
+    <!-- IMAGE -->
+
+    <img
+        id="lightboxImage"
+        src=""
+        alt="Selected image"
+    >
+
+
+    <!-- NEXT BUTTON -->
+
+    <button
+        class="next-btn"
+        id="nextBtn"
+        type="button"
+        aria-label="Next image"
+    >
+        &#10095;
+    </button>
+
+
+    <!-- PHOTO INFORMATION -->
+
+    <div
+        class="photo-info"
+        id="photoInfo"
+    ></div>
+
+</div>
+
+
+<!-- =================================
+     JAVASCRIPT
+================================== -->
+
+<script src="script.js"></script>
