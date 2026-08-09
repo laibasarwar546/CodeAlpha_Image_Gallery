@@ -2,12 +2,9 @@
 // UNSPLASH API
 // ==========================================
 
-const API_KEY =
-    "";
-
-const API_URL =
-    "https://api.unsplash.com/search/photos";
-
+// Vercel serverless API endpoint
+// The Unsplash API key is NOT stored in this file.
+const API_URL = "/api/search";
 
 // ==========================================
 // HTML ELEMENTS
@@ -52,7 +49,6 @@ const nextBtn =
 const photoInfo =
     document.getElementById("photoInfo");
 
-
 // ==========================================
 // SETTINGS
 // ==========================================
@@ -62,7 +58,6 @@ const TOTAL_IMAGES = 50;
 const FIRST_PAGE = 30;
 
 const SECOND_PAGE = 20;
-
 
 // ==========================================
 // VARIABLES
@@ -76,68 +71,50 @@ let currentQuery = "nature";
 
 let isLoading = false;
 
-
 // ==========================================
 // IMAGE CACHE
 // ==========================================
 
-const imageCache =
-    new Map();
-
+const imageCache = new Map();
 
 // ==========================================
-// GET PHOTOS FROM UNSPLASH
+// GET PHOTOS FROM OUR VERCEL API
 // ==========================================
 
-async function getPhotos(
-    query = "nature"
-) {
+async function getPhotos(query = "nature") {
 
     // Prevent duplicate requests
     if (isLoading) {
         return;
     }
 
-
     isLoading = true;
-
 
     // Show loading
     loading.style.display = "block";
 
-
     // Clear previous error
     errorMessage.textContent = "";
-
 
     // Reset gallery
     gallery.innerHTML = "";
 
-
     // Reset images
     photos = [];
-
 
     // Reset index
     currentIndex = 0;
 
-
     // Save current search
     currentQuery = query;
-
 
     // Clear old image cache
     imageCache.clear();
 
-
     // Reset counter
     if (imageCount) {
-
-        imageCount.textContent =
-            "Loading images...";
-
+        imageCount.textContent = "Loading images...";
     }
-
 
     try {
 
@@ -145,22 +122,11 @@ async function getPhotos(
         // FIRST REQUEST — 30 IMAGES
         // ======================================
 
-        const firstResponse =
-            await fetch(
-
-                `${API_URL}?query=${encodeURIComponent(
-                    query
-                )}&page=1&per_page=${FIRST_PAGE}`,
-
-                {
-                    headers: {
-                        Authorization:
-                            `Client-ID ${API_KEY}`
-                    }
-                }
-
-            );
-
+        const firstResponse = await fetch(
+            `${API_URL}?query=${encodeURIComponent(
+                query
+            )}&page=1&per_page=${FIRST_PAGE}`
+        );
 
         // ======================================
         // CHECK FIRST RESPONSE
@@ -168,49 +134,23 @@ async function getPhotos(
 
         if (!firstResponse.ok) {
 
-            if (
-                firstResponse.status === 401
-            ) {
+            let errorData = {};
 
-                throw new Error(
-                    "Invalid Unsplash API key."
-                );
-
+            try {
+                errorData =
+                    await firstResponse.json();
+            } catch {
+                // Ignore JSON parsing error
             }
-
-
-            if (
-                firstResponse.status === 403
-            ) {
-
-                throw new Error(
-                    "Unsplash API access was denied or limited."
-                );
-
-            }
-
-
-            if (
-                firstResponse.status === 429
-            ) {
-
-                throw new Error(
-                    "Unsplash API rate limit reached. Please try again later."
-                );
-
-            }
-
 
             throw new Error(
+                errorData.error ||
                 `API Error: ${firstResponse.status}`
             );
-
         }
-
 
         const firstData =
             await firstResponse.json();
-
 
         // ======================================
         // ADD FIRST 30
@@ -220,7 +160,6 @@ async function getPhotos(
             ...firstData.results
         );
 
-
         // ======================================
         // DISPLAY FIRST 30
         // ======================================
@@ -229,7 +168,6 @@ async function getPhotos(
             firstData.results,
             0
         );
-
 
         // ======================================
         // SECOND REQUEST — 20 IMAGES
@@ -242,20 +180,10 @@ async function getPhotos(
 
             const secondResponse =
                 await fetch(
-
                     `${API_URL}?query=${encodeURIComponent(
                         query
-                    )}&page=2&per_page=${SECOND_PAGE}`,
-
-                    {
-                        headers: {
-                            Authorization:
-                                `Client-ID ${API_KEY}`
-                        }
-                    }
-
+                    )}&page=2&per_page=${SECOND_PAGE}`
                 );
-
 
             // ==================================
             // CHECK SECOND RESPONSE
@@ -263,27 +191,23 @@ async function getPhotos(
 
             if (!secondResponse.ok) {
 
-                if (
-                    secondResponse.status === 429
-                ) {
+                let errorData = {};
 
-                    throw new Error(
-                        "Unsplash API rate limit reached."
-                    );
-
+                try {
+                    errorData =
+                        await secondResponse.json();
+                } catch {
+                    // Ignore JSON parsing error
                 }
 
-
                 throw new Error(
+                    errorData.error ||
                     `API Error: ${secondResponse.status}`
                 );
-
             }
-
 
             const secondData =
                 await secondResponse.json();
-
 
             // ==================================
             // ADD NEXT 20
@@ -293,7 +217,6 @@ async function getPhotos(
                 ...secondData.results
             );
 
-
             // ==================================
             // DISPLAY NEXT 20
             // ==================================
@@ -302,9 +225,7 @@ async function getPhotos(
                 secondData.results,
                 FIRST_PAGE
             );
-
         }
-
 
         // ======================================
         // LIMIT TO EXACTLY 50
@@ -316,13 +237,11 @@ async function getPhotos(
                 TOTAL_IMAGES
             );
 
-
         // ======================================
         // UPDATE COUNTER
         // ======================================
 
         updateImageCount();
-
 
     } catch (error) {
 
@@ -331,17 +250,13 @@ async function getPhotos(
             error
         );
 
-
         errorMessage.textContent =
             error.message ||
             "Unable to load images. Please try again.";
 
-
         if (imageCount) {
-
             imageCount.textContent =
                 "0 images";
-
         }
 
     } finally {
@@ -349,9 +264,7 @@ async function getPhotos(
         isLoading = false;
 
         loading.style.display = "none";
-
     }
-
 }
 
 // ==========================================
@@ -364,7 +277,11 @@ function showSkeletons() {
 
     const skeletonCount = 12;
 
-    for (let i = 0; i < skeletonCount; i++) {
+    for (
+        let i = 0;
+        i < skeletonCount;
+        i++
+    ) {
 
         const skeleton =
             document.createElement("div");
@@ -378,6 +295,7 @@ function showSkeletons() {
         );
     }
 }
+
 // ==========================================
 // DISPLAY PHOTOS
 // ==========================================
@@ -395,15 +313,11 @@ function displayPhotos(
                 startIndex + index >=
                 TOTAL_IMAGES
             ) {
-
                 return;
-
             }
-
 
             const realIndex =
                 startIndex + index;
-
 
             // ==================================
             // CREATE CARD
@@ -414,11 +328,9 @@ function displayPhotos(
                     "div"
                 );
 
-
             item.classList.add(
                 "gallery-item"
             );
-
 
             // ==================================
             // IMAGE NAME
@@ -429,7 +341,6 @@ function displayPhotos(
                 photo.description ||
                 currentQuery ||
                 "Beautiful image";
-
 
             // ==================================
             // IMAGE CARD
@@ -463,7 +374,6 @@ function displayPhotos(
 
             `;
 
-
             // ==================================
             // CLICK CARD
             // ==================================
@@ -476,24 +386,18 @@ function displayPhotos(
                         realIndex;
 
                     openLightbox();
-
                 }
             );
-
 
             gallery.appendChild(
                 item
             );
-
         }
     );
 
-
     // Update counter
     updateImageCount();
-
 }
-
 
 // ==========================================
 // UPDATE IMAGE COUNTER
@@ -505,22 +409,17 @@ function updateImageCount() {
         return;
     }
 
-
     if (photos.length === 0) {
 
         imageCount.textContent =
             "0 images";
 
         return;
-
     }
-
 
     imageCount.textContent =
         `${photos.length} images`;
-
 }
-
 
 // ==========================================
 // ESCAPE HTML
@@ -533,14 +432,10 @@ function escapeHTML(text) {
             "div"
         );
 
-
     div.textContent = text;
 
-
     return div.innerHTML;
-
 }
-
 
 // ==========================================
 // CAPITALIZE TEXT
@@ -549,19 +444,14 @@ function escapeHTML(text) {
 function capitalizeText(text) {
 
     if (!text) {
-
         return "Beautiful image";
-
     }
-
 
     return (
         text.charAt(0).toUpperCase() +
         text.slice(1)
     );
-
 }
-
 
 // ==========================================
 // FAST IMAGE URL
@@ -584,9 +474,7 @@ function getFastImageURL(photo) {
         `&q=85` +
         `&auto=format`
     );
-
 }
-
 
 // ==========================================
 // PRELOAD IMAGE
@@ -598,33 +486,24 @@ function preloadImage(index) {
         index < 0 ||
         index >= photos.length
     ) {
-
         return;
-
     }
-
 
     const photo =
         photos[index];
 
-
     const imageURL =
         getFastImageURL(photo);
-
 
     // Already cached
     if (
         imageCache.has(imageURL)
     ) {
-
         return;
-
     }
-
 
     const image =
         new Image();
-
 
     image.onload = () => {
 
@@ -632,24 +511,18 @@ function preloadImage(index) {
             imageURL,
             image
         );
-
     };
-
 
     image.onerror = () => {
 
         imageCache.delete(
             imageURL
         );
-
     };
-
 
     image.src =
         imageURL;
-
 }
-
 
 // ==========================================
 // PRELOAD NEARBY IMAGES
@@ -662,26 +535,21 @@ function preloadNearbyImages() {
         currentIndex + 1
     );
 
-
     // Previous image
     preloadImage(
         currentIndex - 1
     );
-
 
     // Extra next
     preloadImage(
         currentIndex + 2
     );
 
-
     // Extra previous
     preloadImage(
         currentIndex - 2
     );
-
 }
-
 
 // ==========================================
 // OPEN LIGHTBOX
@@ -692,22 +560,15 @@ function openLightbox() {
     if (
         photos.length === 0
     ) {
-
         return;
-
     }
-
 
     const photo =
         photos[currentIndex];
 
-
     if (!photo) {
-
         return;
-
     }
-
 
     // ======================================
     // IMAGE NAME
@@ -719,14 +580,12 @@ function openLightbox() {
         currentQuery ||
         "Beautiful image";
 
-
     // ======================================
     // IMAGE URL
     // ======================================
 
     const imageURL =
         getFastImageURL(photo);
-
 
     // ======================================
     // SHOW IMAGE
@@ -735,10 +594,8 @@ function openLightbox() {
     lightboxImage.src =
         imageURL;
 
-
     lightboxImage.alt =
         imageName;
-
 
     // ======================================
     // PHOTO INFORMATION
@@ -763,7 +620,6 @@ function openLightbox() {
 
     `;
 
-
     // ======================================
     // SHOW LIGHTBOX
     // ======================================
@@ -772,15 +628,12 @@ function openLightbox() {
         "active"
     );
 
-
     // ======================================
     // PRELOAD
     // ======================================
 
     preloadNearbyImages();
-
 }
-
 
 // ==========================================
 // NEXT IMAGE
@@ -791,14 +644,10 @@ function showNextImage() {
     if (
         photos.length === 0
     ) {
-
         return;
-
     }
 
-
     currentIndex++;
-
 
     // Loop back to first
     if (
@@ -807,14 +656,10 @@ function showNextImage() {
     ) {
 
         currentIndex = 0;
-
     }
 
-
     openLightbox();
-
 }
-
 
 // ==========================================
 // PREVIOUS IMAGE
@@ -825,14 +670,10 @@ function showPreviousImage() {
     if (
         photos.length === 0
     ) {
-
         return;
-
     }
 
-
     currentIndex--;
-
 
     // Loop to last image
     if (
@@ -841,14 +682,10 @@ function showPreviousImage() {
 
         currentIndex =
             photos.length - 1;
-
     }
 
-
     openLightbox();
-
 }
-
 
 // ==========================================
 // NEXT BUTTON
@@ -861,10 +698,8 @@ nextBtn.addEventListener(
         event.stopPropagation();
 
         showNextImage();
-
     }
 );
-
 
 // ==========================================
 // PREVIOUS BUTTON
@@ -877,10 +712,8 @@ prevBtn.addEventListener(
         event.stopPropagation();
 
         showPreviousImage();
-
     }
 );
-
 
 // ==========================================
 // CLOSE BUTTON
@@ -895,10 +728,8 @@ closeBtn.addEventListener(
         lightbox.classList.remove(
             "active"
         );
-
     }
 );
-
 
 // ==========================================
 // CLICK OUTSIDE LIGHTBOX
@@ -915,12 +746,9 @@ lightbox.addEventListener(
             lightbox.classList.remove(
                 "active"
             );
-
         }
-
     }
 );
-
 
 // ==========================================
 // KEYBOARD CONTROLS
@@ -936,11 +764,8 @@ document.addEventListener(
                 "active"
             )
         ) {
-
             return;
-
         }
-
 
         // Next
         if (
@@ -948,9 +773,7 @@ document.addEventListener(
         ) {
 
             showNextImage();
-
         }
-
 
         // Previous
         if (
@@ -958,9 +781,7 @@ document.addEventListener(
         ) {
 
             showPreviousImage();
-
         }
-
 
         // Close
         if (
@@ -970,12 +791,9 @@ document.addEventListener(
             lightbox.classList.remove(
                 "active"
             );
-
         }
-
     }
 );
-
 
 // ==========================================
 // SEARCH BUTTON
@@ -988,21 +806,16 @@ searchBtn.addEventListener(
         const query =
             searchInput.value.trim();
 
-
         if (
             query === ""
         ) {
-
             return;
-
         }
-
 
         // Close lightbox
         lightbox.classList.remove(
             "active"
         );
-
 
         // Remove active category
         filterButtons.forEach(
@@ -1011,17 +824,13 @@ searchBtn.addEventListener(
                 button.classList.remove(
                     "active"
                 );
-
             }
         );
 
-
         // Search
         getPhotos(query);
-
     }
 );
-
 
 // ==========================================
 // ENTER TO SEARCH
@@ -1034,30 +843,22 @@ searchInput.addEventListener(
         if (
             event.key !== "Enter"
         ) {
-
             return;
-
         }
-
 
         const query =
             searchInput.value.trim();
 
-
         if (
             query === ""
         ) {
-
             return;
-
         }
-
 
         // Close lightbox
         lightbox.classList.remove(
             "active"
         );
-
 
         // Remove active category
         filterButtons.forEach(
@@ -1066,17 +867,13 @@ searchInput.addEventListener(
                 button.classList.remove(
                     "active"
                 );
-
             }
         );
 
-
         // Search
         getPhotos(query);
-
     }
 );
-
 
 // ==========================================
 // CATEGORY FILTERS
@@ -1096,41 +893,32 @@ filterButtons.forEach(
                         btn.classList.remove(
                             "active"
                         );
-
                     }
                 );
-
 
                 // Add active
                 button.classList.add(
                     "active"
                 );
 
-
                 // Clear search
                 searchInput.value = "";
-
 
                 // Close lightbox
                 lightbox.classList.remove(
                     "active"
                 );
 
-
                 // Category
                 const query =
                     button.dataset.query;
 
-
                 // Load 50 images
                 getPhotos(query);
-
             }
         );
-
     }
 );
-
 
 // ==========================================
 // INITIAL LOAD
