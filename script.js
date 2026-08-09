@@ -2,61 +2,36 @@
 // UNSPLASH API
 // ==========================================
 
-// Vercel serverless API endpoint
-// The Unsplash API key is NOT stored in this file.
+// IMPORTANT:
+// Images are fetched through our Vercel API endpoint.
+// The Unsplash key stays safely on the server.
 const API_URL = "/api/search";
 
 // ==========================================
 // HTML ELEMENTS
 // ==========================================
 
-const gallery =
-    document.getElementById("gallery");
+const gallery = document.getElementById("gallery");
+const searchInput = document.getElementById("searchInput");
+const searchBtn = document.getElementById("searchBtn");
+const loading = document.getElementById("loading");
+const errorMessage = document.getElementById("error");
+const imageCount = document.getElementById("imageCount");
+const filterButtons = document.querySelectorAll(".filter-btn");
 
-const searchInput =
-    document.getElementById("searchInput");
-
-const searchBtn =
-    document.getElementById("searchBtn");
-
-const loading =
-    document.getElementById("loading");
-
-const errorMessage =
-    document.getElementById("error");
-
-const imageCount =
-    document.getElementById("imageCount");
-
-const filterButtons =
-    document.querySelectorAll(".filter-btn");
-
-const lightbox =
-    document.getElementById("lightbox");
-
-const lightboxImage =
-    document.getElementById("lightboxImage");
-
-const closeBtn =
-    document.getElementById("closeBtn");
-
-const prevBtn =
-    document.getElementById("prevBtn");
-
-const nextBtn =
-    document.getElementById("nextBtn");
-
-const photoInfo =
-    document.getElementById("photoInfo");
+const lightbox = document.getElementById("lightbox");
+const lightboxImage = document.getElementById("lightboxImage");
+const closeBtn = document.getElementById("closeBtn");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const photoInfo = document.getElementById("photoInfo");
 
 // ==========================================
 // SETTINGS
 // ==========================================
 
 const TOTAL_IMAGES = 50;
-
 const FIRST_PAGE = 30;
-
 const SECOND_PAGE = 20;
 
 // ==========================================
@@ -64,24 +39,123 @@ const SECOND_PAGE = 20;
 // ==========================================
 
 let photos = [];
-
 let currentIndex = 0;
-
 let currentQuery = "nature";
-
 let isLoading = false;
 
 // ==========================================
 // IMAGE CACHE
 // ==========================================
 
+// Stores already loaded images
 const imageCache = new Map();
 
 // ==========================================
-// GET PHOTOS FROM OUR VERCEL API
+// GET OPTIMIZED IMAGE URL
 // ==========================================
 
-async function getPhotos(query = "nature") {
+function getFastImageURL(photo) {
+
+    if (!photo || !photo.urls) {
+        return "";
+    }
+
+    // Use Unsplash regular image instead of huge raw image.
+    // This is much faster for the lightbox.
+    return (
+        `${photo.urls.regular}` +
+        `&w=1200` +
+        `&q=80` +
+        `&auto=format`
+    );
+}
+
+// ==========================================
+// PRELOAD ONE IMAGE
+// ==========================================
+
+function preloadImage(index) {
+
+    if (
+        index < 0 ||
+        index >= photos.length
+    ) {
+        return;
+    }
+
+    const photo = photos[index];
+
+    if (!photo) {
+        return;
+    }
+
+    const imageURL = getFastImageURL(photo);
+
+    if (!imageURL) {
+        return;
+    }
+
+    // Already loaded
+    if (imageCache.has(imageURL)) {
+        return;
+    }
+
+    const image = new Image();
+
+    image.onload = () => {
+
+        imageCache.set(
+            imageURL,
+            image
+        );
+
+    };
+
+    image.onerror = () => {
+
+        imageCache.delete(
+            imageURL
+        );
+
+    };
+
+    image.src = imageURL;
+}
+
+// ==========================================
+// PRELOAD NEARBY IMAGES
+// ==========================================
+
+function preloadNearbyImages() {
+
+    // Next image
+    preloadImage(
+        currentIndex + 1
+    );
+
+    // Previous image
+    preloadImage(
+        currentIndex - 1
+    );
+
+    // Extra next image
+    preloadImage(
+        currentIndex + 2
+    );
+
+    // Extra previous image
+    preloadImage(
+        currentIndex - 2
+    );
+}
+
+// ==========================================
+// GET PHOTOS FROM API
+// ==========================================
+
+async function getPhotos(
+    query = "nature"
+) {
 
     // Prevent duplicate requests
     if (isLoading) {
@@ -99,21 +173,22 @@ async function getPhotos(query = "nature") {
     // Reset gallery
     gallery.innerHTML = "";
 
-    // Reset images
+    // Reset photos
     photos = [];
 
     // Reset index
     currentIndex = 0;
 
-    // Save current search
+    // Save search
     currentQuery = query;
 
-    // Clear old image cache
+    // Clear image cache
     imageCache.clear();
 
-    // Reset counter
+    // Update counter
     if (imageCount) {
-        imageCount.textContent = "Loading images...";
+        imageCount.textContent =
+            "Loading images...";
     }
 
     try {
@@ -122,11 +197,12 @@ async function getPhotos(query = "nature") {
         // FIRST REQUEST — 30 IMAGES
         // ======================================
 
-        const firstResponse = await fetch(
-            `${API_URL}?query=${encodeURIComponent(
-                query
-            )}&page=1&per_page=${FIRST_PAGE}`
-        );
+        const firstResponse =
+            await fetch(
+                `${API_URL}?query=${encodeURIComponent(
+                    query
+                )}&page=1&per_page=${FIRST_PAGE}`
+            );
 
         // ======================================
         // CHECK FIRST RESPONSE
@@ -134,14 +210,9 @@ async function getPhotos(query = "nature") {
 
         if (!firstResponse.ok) {
 
-            let errorData = {};
-
-            try {
-                errorData =
-                    await firstResponse.json();
-            } catch {
-                // Ignore JSON parsing error
-            }
+            const errorData =
+                await firstResponse.json()
+                    .catch(() => ({}));
 
             throw new Error(
                 errorData.error ||
@@ -185,20 +256,11 @@ async function getPhotos(query = "nature") {
                     )}&page=2&per_page=${SECOND_PAGE}`
                 );
 
-            // ==================================
-            // CHECK SECOND RESPONSE
-            // ==================================
-
             if (!secondResponse.ok) {
 
-                let errorData = {};
-
-                try {
-                    errorData =
-                        await secondResponse.json();
-                } catch {
-                    // Ignore JSON parsing error
-                }
+                const errorData =
+                    await secondResponse.json()
+                        .catch(() => ({}));
 
                 throw new Error(
                     errorData.error ||
@@ -209,18 +271,12 @@ async function getPhotos(query = "nature") {
             const secondData =
                 await secondResponse.json();
 
-            // ==================================
-            // ADD NEXT 20
-            // ==================================
-
+            // Add next 20
             photos.push(
                 ...secondData.results
             );
 
-            // ==================================
-            // DISPLAY NEXT 20
-            // ==================================
-
+            // Display next 20
             displayPhotos(
                 secondData.results,
                 FIRST_PAGE
@@ -228,7 +284,7 @@ async function getPhotos(query = "nature") {
         }
 
         // ======================================
-        // LIMIT TO EXACTLY 50
+        // EXACTLY 50 IMAGES
         // ======================================
 
         photos =
@@ -243,6 +299,14 @@ async function getPhotos(query = "nature") {
 
         updateImageCount();
 
+        // ======================================
+        // PRELOAD FIRST FEW IMAGES
+        // ======================================
+
+        preloadImage(0);
+        preloadImage(1);
+        preloadImage(2);
+
     } catch (error) {
 
         console.error(
@@ -255,6 +319,7 @@ async function getPhotos(query = "nature") {
             "Unable to load images. Please try again.";
 
         if (imageCount) {
+
             imageCount.textContent =
                 "0 images";
         }
@@ -263,7 +328,8 @@ async function getPhotos(query = "nature") {
 
         isLoading = false;
 
-        loading.style.display = "none";
+        loading.style.display =
+            "none";
     }
 }
 
@@ -354,6 +420,7 @@ function displayPhotos(
                         imageName
                     )}"
                     loading="lazy"
+                    decoding="async"
                 >
 
                 <div class="photo-overlay">
@@ -371,7 +438,6 @@ function displayPhotos(
                     </p>
 
                 </div>
-
             `;
 
             // ==================================
@@ -395,7 +461,6 @@ function displayPhotos(
         }
     );
 
-    // Update counter
     updateImageCount();
 }
 
@@ -444,110 +509,13 @@ function escapeHTML(text) {
 function capitalizeText(text) {
 
     if (!text) {
+
         return "Beautiful image";
     }
 
     return (
         text.charAt(0).toUpperCase() +
         text.slice(1)
-    );
-}
-
-// ==========================================
-// FAST IMAGE URL
-// ==========================================
-
-function getFastImageURL(photo) {
-
-    /*
-        Unsplash raw image can be very large.
-
-        We request:
-        Width = 1400px
-        Quality = 85
-        Auto format
-    */
-
-    return (
-        `${photo.urls.raw}` +
-        `&w=1400` +
-        `&q=85` +
-        `&auto=format`
-    );
-}
-
-// ==========================================
-// PRELOAD IMAGE
-// ==========================================
-
-function preloadImage(index) {
-
-    if (
-        index < 0 ||
-        index >= photos.length
-    ) {
-        return;
-    }
-
-    const photo =
-        photos[index];
-
-    const imageURL =
-        getFastImageURL(photo);
-
-    // Already cached
-    if (
-        imageCache.has(imageURL)
-    ) {
-        return;
-    }
-
-    const image =
-        new Image();
-
-    image.onload = () => {
-
-        imageCache.set(
-            imageURL,
-            image
-        );
-    };
-
-    image.onerror = () => {
-
-        imageCache.delete(
-            imageURL
-        );
-    };
-
-    image.src =
-        imageURL;
-}
-
-// ==========================================
-// PRELOAD NEARBY IMAGES
-// ==========================================
-
-function preloadNearbyImages() {
-
-    // Next image
-    preloadImage(
-        currentIndex + 1
-    );
-
-    // Previous image
-    preloadImage(
-        currentIndex - 1
-    );
-
-    // Extra next
-    preloadImage(
-        currentIndex + 2
-    );
-
-    // Extra previous
-    preloadImage(
-        currentIndex - 2
     );
 }
 
@@ -591,8 +559,23 @@ function openLightbox() {
     // SHOW IMAGE
     // ======================================
 
-    lightboxImage.src =
-        imageURL;
+    // If image is already cached,
+    // display it immediately.
+    if (
+        imageCache.has(imageURL)
+    ) {
+
+        lightboxImage.src =
+            imageURL;
+
+    } else {
+
+        lightboxImage.src =
+            imageURL;
+
+        // Start loading next images
+        preloadNearbyImages();
+    }
 
     lightboxImage.alt =
         imageName;
@@ -629,7 +612,7 @@ function openLightbox() {
     );
 
     // ======================================
-    // PRELOAD
+    // PRELOAD NEARBY
     // ======================================
 
     preloadNearbyImages();
@@ -649,7 +632,7 @@ function showNextImage() {
 
     currentIndex++;
 
-    // Loop back to first
+    // Loop back
     if (
         currentIndex >=
         photos.length
@@ -675,7 +658,7 @@ function showPreviousImage() {
 
     currentIndex--;
 
-    // Loop to last image
+    // Loop to last
     if (
         currentIndex < 0
     ) {
@@ -740,7 +723,8 @@ lightbox.addEventListener(
     (event) => {
 
         if (
-            event.target === lightbox
+            event.target ===
+            lightbox
         ) {
 
             lightbox.classList.remove(
@@ -769,7 +753,8 @@ document.addEventListener(
 
         // Next
         if (
-            event.key === "ArrowRight"
+            event.key ===
+            "ArrowRight"
         ) {
 
             showNextImage();
@@ -777,7 +762,8 @@ document.addEventListener(
 
         // Previous
         if (
-            event.key === "ArrowLeft"
+            event.key ===
+            "ArrowLeft"
         ) {
 
             showPreviousImage();
@@ -785,7 +771,8 @@ document.addEventListener(
 
         // Close
         if (
-            event.key === "Escape"
+            event.key ===
+            "Escape"
         ) {
 
             lightbox.classList.remove(
