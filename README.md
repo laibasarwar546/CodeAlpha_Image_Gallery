@@ -6,8 +6,7 @@ The project uses **HTML, CSS, JavaScript, and the Unsplash API** to dynamically 
 
 ## 🚀 Live Demo
 
-**Vercel:**
-[View Live Demo](https://code-alpha-image-gallery-gc8958ljh-code-alpha-image-gallery.vercel.app/)
+[View Live Demo](https://pixora-view.vercel.app/)
 
 ## 📂 GitHub Repository
 
